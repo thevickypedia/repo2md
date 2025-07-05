@@ -14,7 +14,7 @@ LOGGER = logging.getLogger("repo2md")
 handler = logging.StreamHandler()
 handler.setFormatter(
     fmt=logging.Formatter(
-        fmt="%(asctime)s - [%(levelname)s] - %(name)s - %(funcName)s - Line: %(lineno)d - %(message)s",
+        fmt="%(asctime)s - %(levelname)s - [%(name)s:%(funcName)s:%(lineno)d] - %(message)s",
         datefmt="%b-%d-%Y %H:%M:%S",
     )
 )

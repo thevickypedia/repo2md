@@ -1,6 +1,7 @@
 import io
 import logging
 import os
+import shutil
 import zipfile
 from typing import Dict
 
@@ -97,5 +98,11 @@ def download_and_extract(
         subdir = zip_ref.namelist()[0].split("/")[0]
     LOGGER.debug(f"Repository unzipped to: {dest_dir}")
     true_path = os.path.join(dest_dir, repo)
-    os.rename(os.path.join(dest_dir, subdir), os.path.join(dest_dir, repo))
+    if os.path.exists(true_path):
+        LOGGER.warning(
+            "Directory '%s' already exists, removing it before renaming", true_path
+        )
+        shutil.rmtree(true_path)
+    LOGGER.debug("Renaming '%s' to '%s'", subdir, repo)
+    os.rename(os.path.join(dest_dir, subdir), true_path)
     return {"path": true_path, "language": repo_info["language"]}

@@ -11,7 +11,7 @@ dotenv.load_dotenv(dotenv_path=dotenv.find_dotenv(), override=True)
 def get_env(
     keys: List[str],
     default: str = None,
-) -> Any:
+) -> str:
     """Fetches the value of the environment variable that matches any of the provided keys.
 
     Args:
@@ -22,8 +22,10 @@ def get_env(
         str:
         The value of the first matching environment variable, or the default value if none match.
     """
-    for key, value in os.environ.items():
-        if key.lower() in keys:
+    for key in keys:
+        if value := os.environ.get(key.lower()):
+            return value
+        if value := os.environ.get(key.upper()):
             return value
     return default
 
