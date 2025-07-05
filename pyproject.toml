@@ -1,0 +1,30 @@
+[project]
+name = "repo2md"
+dynamic = ["version"]
+description = "Python module to convert GitHub repositories to markdown files."
+readme = "README.md"
+authors = [{ name = "Vignesh Rao", email = "svignesh1793@gmail.com" }]
+
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["repo2md"]
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.setuptools]
+packages = ["repo2md"]
+
+[tool.setuptools.dynamic]
+version = {attr = "repo2md.version"}
+
+[build-system]
+requires      = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = []
+
+[project.urls]
+Homepage = "https://github.com/thevickypedia/repo2md"
