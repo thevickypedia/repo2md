@@ -1,17 +1,13 @@
+import logging
 import os
 import pathlib
 import shutil
 from collections.abc import Generator
 from typing import Dict, List, Tuple
 
-from repo2md.github import download_and_extract
-from repo2md.tree import Tree
-from repo2md.utils import (
-    IGNORE_DIRECTORIES,
-    IGNORE_FILES,
-    LANGUAGE_EXTENSIONS,
-    LOGGER,
-)
+from repo2md import config, github, tree, utils
+
+LOGGER = logging.getLogger("repo2md")
 
 
 def get_content(filepath: str) -> Dict[str, str]:
@@ -25,8 +21,14 @@ def get_content(filepath: str) -> Dict[str, str]:
         A dictionary with the file path as the key and the file content as the value.
     """
     LOGGER.info("Reading file %s", filepath)
-    with open(filepath) as fstream:
-        return {filepath: "\n".join([f.replace("\n", "") for f in fstream.readlines()])}
+    try:
+        with open(filepath) as fstream:
+            return {
+                filepath: "\n".join([f.replace("\n", "") for f in fstream.readlines()])
+            }
+    except UnicodeDecodeError as error:
+        LOGGER.warning("Error reading file %s: %s", filepath, error)
+        return {filepath: "No unicode data available"}
 
 
 def get_current(
@@ -44,7 +46,7 @@ def get_current(
         A dictionary with the file path as the key and the file content as the value.
     """
     LOGGER.info("Reading directory %s", dir_path)
-    extensions = LANGUAGE_EXTENSIONS[language.lower()] if language else []
+    extensions = utils.LANGUAGE_EXTENSIONS[language.lower()] if language else []
     for file in os.listdir(dir_path):
         if file.lower() in ignore_files:
             LOGGER.debug("Ignoring file %s in directory %s", file, dir_path)
@@ -58,8 +60,8 @@ def get_current(
 
 def get_files(
     src: str,
-    ignore_directories: List[str] = IGNORE_DIRECTORIES,
-    ignore_files: List[str] = IGNORE_FILES,
+    ignore_directories: List[str] = utils.IGNORE_DIRECTORIES,
+    ignore_files: List[str] = utils.IGNORE_FILES,
     language: str = None,
 ) -> Generator[Tuple[str, List[Dict[str, str]]]]:
     """Walks through the source directory and yields directories with their file contents.
@@ -76,7 +78,12 @@ def get_files(
     """
     LOGGER.info("Walking directory %s", src)
     for __path, directories, files in os.walk(src):
-        if any((ignore in __path.lower() for ignore in ignore_directories)):
+        if any(
+            (
+                ignore in __path.lower().split(os.path.sep)
+                for ignore in ignore_directories
+            )
+        ):
             LOGGER.debug("Ignoring directory %s", __path)
             continue
         # Loops through root directory
@@ -130,10 +137,10 @@ def generate_markdown(
     iterator = get_files(str(path), language=language)
     text = get_code(iterator)
     LOGGER.info("Generating tree for %s", path)
-    tree = Tree(path).get()
+    structure = tree.Tree(path).get()
     LOGGER.info("Storing output in %s", filename)
     with open(filename, "w") as file:
-        file.write(f"## Contents:\n\n```\n{tree}\n```\n\n")
+        file.write(f"## Contents:\n\n```\n{structure}\n```\n\n")
         file.write(text.rstrip())
         file.write("\n")
         file.flush()
@@ -147,42 +154,50 @@ def convert_repo_to_md(
     language_filter: bool = False,
     source_repo_path: str = None,
     source_repo_language: str = None,
-    git_token: str = os.getenv("GIT_TOKEN"),
-    git_owner: str = os.getenv("GIT_OWNER"),
+    **kwargs,
 ) -> None:
     """Converts a repository to a Markdown file with its directory tree and code contents.
 
     Args:
-        repo_name: Name of the repository to convert.
+        repo_name: Name of the GitHub repository to convert.
         branch: Branch of the repository to use (default is None, which uses the default branch).
         delete: Boolean flag to delete the repository after conversion (default is False).
         destination: Destination directory to store the Markdown file (default is "tmp").
         language_filter: Boolean flag to filter files by language (default is True).
         source_repo_path: Source path to a repo if a directory has been downloaded already.
         source_repo_language: Programming language of the code files in source path.
+
+    Keyword Args:
         git_token: Git token to authenticate with GitHub.
         git_owner: Owner of the repository. Defaults to the environment variable GIT_OWNER.
+        git_api_url: GitHub API URL. Defaults to the environment variable GIT_API_URL.
     """
+    config.env = config.EnvConfig(**kwargs)
     os.makedirs(destination, exist_ok=True)
     if source_repo_path:
         assert os.path.isdir(
             source_repo_path
-        ), f"Source path {source_repo_path!r} does not exist"
+        ), f"'source_repo_path' {source_repo_path!r} does not exist"
         if source_repo_language:
-            assert LANGUAGE_EXTENSIONS.get(
+            assert utils.LANGUAGE_EXTENSIONS.get(
                 source_repo_language.lower()
-            ), f"Source language {source_repo_language!r} is not supported for conversion - raise a PR to include it"
+            ), f"'source_repo_language' {source_repo_language!r} is not supported for conversion"
         else:
             assert (
                 language_filter is False
-            ), f"Source language is mandatory for custom source path when 'language_filter' is {language_filter}"
+            ), "'source_repo_language' is required for custom source when 'language_filter' is enabled"
         downloaded = {"path": source_repo_path, "language": source_repo_language}
         delete = False  # Do not delete custom source path
         repo_name = os.path.basename(os.path.normpath(source_repo_path))
     else:
-        assert repo_name, "Repository name is mandatory for conversion"
-        downloaded = download_and_extract(
-            repo=repo_name, dest_dir=destination, branch=branch, git_token=git_token, git_owner=git_owner
+        assert repo_name, "'repo_name' is mandatory for conversion"
+        assert (
+            config.env.git_owner
+        ), f"'git_owner' is required to fetch the repository: {repo_name!r}"
+        downloaded = github.download_and_extract(
+            repo=repo_name,
+            dest_dir=destination,
+            branch=branch,
         )
     download_path = downloaded["path"]
     output = os.path.join(destination, f"{repo_name}.md")

@@ -1,5 +1,4 @@
-import logging
-import os
+import re
 
 LANGUAGE_EXTENSIONS = {
     "python": [".py"],
@@ -85,16 +84,33 @@ IGNORE_DIRECTORIES = [
 
 IGNORE_LIST = IGNORE_DIRECTORIES + IGNORE_FILES
 
-LOGGER = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-handler.setFormatter(
-    fmt=logging.Formatter(
-        fmt="%(asctime)s - [%(levelname)s] - %(name)s - %(funcName)s - Line: %(lineno)d - %(message)s",
-        datefmt="%b-%d-%Y %H:%M:%S",
+
+def urljoin(*args) -> str:
+    """Joins given arguments into an url. Trailing but not leading slashes are stripped for each argument.
+
+    Returns:
+        str:
+        Joined url.
+    """
+    return "/".join(map(lambda x: str(x).rstrip("/").lstrip("/"), args))
+
+
+def is_valid_url(url: str):
+    """Regular expression for validating a URL.
+
+    Args:
+        url: Takes the URL as a string.
+
+    Returns:
+        bool:
+        Returns a boolean flag to indicate validity.
+    """
+    # noinspection RegExpRedundantEscape,RegExpSimplifiable
+    pattern = re.compile(
+        r"^(https?|ftp):\/\/"  # Match http, https or ftp
+        r"(\w+:\w+@)?"  # Optional username:password
+        r"(\S+)"  # Domain name and optional path
+        r"(\:\d+)?"  # Optional port
+        r"(\/[^\s]*)?$"  # Optional path and query string
     )
-)
-if os.environ.get("DEBUG", "").lower() in ("1", "true"):
-    LOGGER.setLevel(level=logging.DEBUG)
-else:
-    LOGGER.setLevel(level=logging.INFO)
-LOGGER.addHandler(hdlr=handler)
+    return re.match(pattern, url)

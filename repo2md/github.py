@@ -1,41 +1,35 @@
 import io
+import logging
 import os
 import zipfile
 from typing import Dict
 
-import dotenv
 import requests
 
-from repo2md.utils import LOGGER
+from repo2md import config, utils
 
-dotenv.load_dotenv(dotenv_path=dotenv.find_dotenv())
-
-API_URL = "https://api.github.com/repos"
+LOGGER = logging.getLogger("repo2md")
 
 
 def get_repo_info(
     repo: str,
-    git_owner: str = os.environ.get("GIT_OWNER"),
-    git_token: str = os.getenv("GIT_TOKEN"),
 ) -> Dict[str, str]:
     """Fetches the default branch and language of a GitHub repository.
 
     Args:
         repo: The name of the repository.
-        git_owner: The owner of the repository. Defaults to the environment variable GIT_OWNER.
-        git_token: GitHub token for authentication. Defaults to the environment variable
 
     Returns:
         Dict[str, str]:
         A dictionary containing the default branch and language of the repository.
     """
-    LOGGER.info("Fetching default branch for %s/%s...", git_owner, repo)
-    url = f"{API_URL}/{git_owner}/{repo}"
+    LOGGER.info("Fetching default branch for %s/%s...", config.env.git_owner, repo)
+    url = utils.urljoin(config.env.repos_url, config.env.git_owner, repo)
     response = requests.get(
         url,
         headers={
             "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {git_token}",
+            "Authorization": f"Bearer {config.env.git_token}",
         },
     )
     assert response.ok, response.text
@@ -43,14 +37,11 @@ def get_repo_info(
     return {"branch": data.get("default_branch"), "language": data.get("language")}
 
 
-def make_request(
-    url: str, git_token: str = os.getenv("GIT_TOKEN")
-) -> requests.Response:
+def make_request(url: str) -> requests.Response:
     """Makes a GET request to the specified URL with the configured headers.
 
     Args:
         url: The URL to make the request to.
-        git_token: GitHub token for authentication. Defaults to the environment variable.
 
     Returns:
         requests.Response: The response object from the GET request.
@@ -62,7 +53,7 @@ def make_request(
                 url,
                 headers={
                     "Accept": "application/vnd.github+json",
-                    "Authorization": f"Bearer {git_token}",
+                    "Authorization": f"Bearer {config.env.git_token}",
                 },
             )
             assert response.ok, response.text
@@ -78,8 +69,6 @@ def download_and_extract(
     repo: str,
     dest_dir: str,
     branch: str = None,
-    git_owner: str = os.environ.get("GIT_OWNER"),
-    git_token: str = os.getenv("GIT_TOKEN"),
 ) -> Dict[str, str]:
     """Downloads a GitHub repository as a zip file and extracts it to the specified directory.
 
@@ -87,18 +76,22 @@ def download_and_extract(
         repo: Repository name.
         dest_dir: Destination directory where the repository will be extracted.
         branch: Branch name to download. If not specified, the default branch will be used.
-        git_owner: Owner of the repository. Defaults to the environment variable GIT_OWNER.
-        git_token: GitHub token for authentication. Defaults to the environment variable.
 
     Returns:
         str:
         True path to the extracted repository directory.
     """
-    repo_info = get_repo_info(repo=repo, git_token=git_token)
-    url = f"{API_URL}/{git_owner}/{repo}/zipball/{branch or repo_info['branch']}"
-    LOGGER.info("Downloading '%s/%s' to '%s'", git_owner, repo, dest_dir)
+    repo_info = get_repo_info(repo=repo)
+    url = utils.urljoin(
+        config.env.repos_url,
+        config.env.git_owner,
+        repo,
+        "zipball",
+        branch or repo_info["branch"],
+    )
+    LOGGER.info("Downloading '%s/%s' to '%s'", config.env.git_owner, repo, dest_dir)
+    response = make_request(url=url)
     LOGGER.debug("Download successful, unzipping...")
-    response = make_request(url=url, git_token=git_token)
     with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
         zip_ref.extractall(dest_dir)
         subdir = zip_ref.namelist()[0].split("/")[0]

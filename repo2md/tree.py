@@ -1,23 +1,7 @@
-import os
 import pathlib
 from typing import Sequence
 
-IGNORE_LIST = (
-    "__pycache__",
-    ".git",
-    ".idea",
-    "venv",
-    ".github",
-    "node_modules",
-    ".ds_store",
-    ".vscode",
-    ".pytest_cache",
-    "build",
-    "dist",
-    "docs",
-    "tests",
-    "gradle",
-)
+from repo2md import utils
 
 
 class Tree:
@@ -27,7 +11,7 @@ class Tree:
 
     """
 
-    def __init__(self, path: pathlib.Path, ignore: Sequence[str] = IGNORE_LIST):
+    def __init__(self, path: pathlib.Path, ignore: Sequence[str] = utils.IGNORE_LIST):
         """Initialize the Tree with a path and optional ignore list.
 
         Args:
@@ -54,7 +38,7 @@ class Tree:
         """
         # If the current path should be ignored, return early
         for i in self.ignore:
-            if i in path.name:
+            if i == path.name:
                 return
 
         # Symbols for the tree
@@ -63,25 +47,19 @@ class Tree:
         tee = "├──"
         blank = "   "
 
-        # Handle the current directory name (check if it's the root or current directory)
-        if path == pathlib.Path("."):
-            folder_name = os.getcwd().split("/")[-1]
-        else:
-            # If it's a directory with a name, use path.name; else, fall back to path.parts[-1]
-            folder_name = path.name if path.name else path.parts[-1]
+        # If it's a directory with a name, use path.name; else, fall back to path.parts[-1]
+        folder_name = path.name if path.name else path.parts[-1]
 
         # Append the folder name with the appropriate tree symbol
         self.__tree.append(header + (elbow if last else tee) + folder_name)
 
         # If the current path is a directory, recurse into its contents
         if path.is_dir():
-            children = list(path.iterdir())
-
             # Filter out ignored files and folders
             children = [
                 child
-                for child in children
-                if not any(ignored in child.name for ignored in self.ignore)
+                for child in path.iterdir()
+                if not any(ignored == child.name for ignored in self.ignore)
             ]
 
             for i, c in enumerate(children):
