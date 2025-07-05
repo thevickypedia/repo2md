@@ -61,7 +61,7 @@ gitverse-release reverse -f release_notes.rst -t 'Release Notes'
 
 **Requirement**
 ```shell
-python -m pip install sphinx==5.1.1 pre-commit recommonmark
+python -m pip install pre-commit
 ```
 
 **Usage**
