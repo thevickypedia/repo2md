@@ -1,6 +1,5 @@
 import os
 import pathlib
-
 from typing import Sequence
 
 IGNORE_LIST = (
@@ -17,7 +16,7 @@ IGNORE_LIST = (
     "dist",
     "docs",
     "tests",
-    "gradle"
+    "gradle",
 )
 
 
