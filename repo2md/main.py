@@ -20,7 +20,7 @@ def get_content(filepath: str) -> Dict[str, str]:
         Dict[str, str]:
         A dictionary with the file path as the key and the file content as the value.
     """
-    LOGGER.info("Reading file %s", filepath)
+    LOGGER.debug("Reading file %s", filepath)
     try:
         with open(filepath) as fstream:
             return {
@@ -45,7 +45,7 @@ def get_current(
         Dict[str, str]:
         A dictionary with the file path as the key and the file content as the value.
     """
-    LOGGER.info("Reading directory %s", dir_path)
+    LOGGER.debug("Reading directory %s", dir_path)
     extensions = utils.LANGUAGE_EXTENSIONS[language.lower()] if language else []
     for file in os.listdir(dir_path):
         if file.lower() in ignore_files:

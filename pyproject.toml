@@ -19,6 +19,10 @@ packages = ["repo2md"]
 version = {attr = "repo2md.version"}
 dependencies = { file = ["requirements.txt"] }
 
+[project.scripts]
+# sends all the args to commandline function, where the arbitary commands as processed accordingly
+repo2md = "repo2md:commandline"
+
 [build-system]
 requires      = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
