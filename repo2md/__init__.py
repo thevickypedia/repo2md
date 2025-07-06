@@ -31,13 +31,14 @@ def print_help() -> None:
         "--version | -V": "Prints the version.",
         "--help | -H": "Prints the help section.",
         "--repo | -R": "Name of the GitHub repository to convert.",
+        "--owner | -O": "Name of the GitHub repository's owner/organization.",
         "--branch | -B": "Branch of the repository to use (default is None, which uses the default branch).",
-        "--delete | -D": "Boolean flag to delete the repository after conversion (default is True).",
-        "--output | -O": "Output directory to store the Markdown file (default is 'tmp').",
+        "--destination | -D": "Destination directory to store the Markdown file (default is 'tmp').",
+        "--clean | -C": "Boolean flag to delete the repository after conversion (default is 'True').",
         "--language | -L": "Boolean flag to filter files by language (default is False).",
         "--source | -S": "Source path to a repo if a directory has been downloaded already.",
     }
-    # weird way to increase spacing to keep all values monotonic
+    # unique way to increase spacing to keep all values monotonic
     _longest_key = len(max(options.keys()))
     _pretext = "\n\t* "
     choices = _pretext + _pretext.join(
@@ -66,7 +67,7 @@ def rename_io_map(**kwargs) -> dict:
         "repo": "repo_name",
         "language": "language_filter",
         "source": "source_repo_path",
-        "output": "destination",
+        "clean": "delete",
     }
     final_kwargs = {}
     for key, value in kwargs.items():
@@ -83,28 +84,55 @@ def rename_io_map(**kwargs) -> dict:
 @click.option("--version", "-V", is_flag=True, help="Prints the version.")
 @click.option("--help", "-H", is_flag=True, help="Prints the help section.")
 @click.option("--repo", "-R", help="Name of the GitHub repository to convert.")
-@click.option("--branch", "-B", help="Branch of the repository to use (default is None, which uses the default branch).")
-@click.option("--output", "-O", help="Output directory to store the Markdown file (default is 'tmp').", default="tmp")
-@click.option("--delete", "-D", help="Boolean flag to delete the repository after conversion (default is True).", is_flag=True, default=False)
-@click.option("--language", "-L", help="Boolean flag to filter files by language (default is False).", is_flag=True, default=False)
-@click.option("--source", "-S", help="Source path to a repo if a directory has been downloaded already.")
+@click.option("--owner", "-O", help="Name of the GitHub repository to convert.")
+@click.option(
+    "--branch",
+    "-B",
+    help="Branch of the repository to use (default is None, which uses the default branch).",
+)
+@click.option(
+    "--destination",
+    "-D",
+    help="Output directory to store the Markdown file (default is 'tmp').",
+    default="tmp",
+)
+@click.option(
+    "--clean",
+    "-C",
+    help="Boolean flag to delete the repository after conversion (default is True).",
+    is_flag=False,
+    default=True,
+)
+@click.option(
+    "--language",
+    "-L",
+    help="Boolean flag to filter files by language (default is False).",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "--source",
+    "-S",
+    help="Source path to a repo if a directory has been downloaded already.",
+)
 def commandline(*args, **kwargs) -> None:
     # noinspection GrazieInspection
     """Starter function to construct a markdown file from a GitHub repository.
 
-        **Flags**
-            - ``--version | -V``: Prints the version.
-            - ``--help | -H``: Prints the help section.
-            - ``--repo | -R``: Name of the GitHub repository to convert.
-            - ``--branch | -B``: Branch of the repository to use (default is None, which uses the default branch).
-            - ``--delete | -D``: Boolean flag to delete the repository after conversion (default is True).
-            - ``--output | -O``: Output directory to store the Markdown file (default is "tmp").
-            - ``--language | -L``: Boolean flag to filter files by language (default is False).
-            - ``--source | -S``: Source path to a repo if a directory has been downloaded already.
+    **Commands**
+        - ``github``: Initiates the conversion process.
+        - ``local``: Uses a local directory as the source for conversion.
 
-        **Commands**
-            - ``github``: Initiates the conversion process.
-            - ``local``: Uses a local directory as the source for conversion.
+    **Flags**
+        - ``--version | -V``: Prints the version.
+        - ``--help | -H``: Prints the help section.
+        - ``--repo | -R``: Name of the GitHub repository to convert.
+        - ``--owner | -O``: Name of the GitHub repository's owner/organization.
+        - ``--branch | -B``: Branch of the repository to use (default is None, which uses the default branch).
+        - ``--destination | -D``: Destination directory to store the Markdown file (default is "tmp").
+        - ``--clean | -C``: Boolean flag to delete the repository after conversion (default is True).
+        - ``--language | -L``: Boolean flag to filter files by language (default is False).
+        - ``--source | -S``: Source path to a repo if a directory has been downloaded already.
     """
     assert sys.argv[0].lower().endswith("repo2md"), "Invalid commandline trigger!!"
 
@@ -115,10 +143,18 @@ def commandline(*args, **kwargs) -> None:
         print_help()
         sys.exit(0)
 
-    if kwargs.get("github"):
+    github = kwargs.get("github") and kwargs.get("github") == "github"
+    local = (kwargs.get("github") and kwargs.get("github") == "local") or (
+        kwargs.get("local") and kwargs.get("local") == "local"
+    )
+    if github:
+        assert kwargs.get("repo"), "\n\t--repo flag is mandatory for GitHub repository!"
         convert_repo_to_md(**rename_io_map(**kwargs))
-    elif kwargs.get("source"):
-        generate_markdown(**rename_io_map(**kwargs))
+    elif local:
+        assert kwargs.get(
+            "source"
+        ), "\n\t--source flag is mandatory for local repository!"
+        convert_repo_to_md(**rename_io_map(**kwargs))
     else:
         print_help()
         sys.exit(1)

@@ -42,6 +42,13 @@ repo2md.convert_repo_to_md(
 )
 ```
 
+#### CLI
+
+```shell
+repo2md --help
+```
+> _The CLI exposes fewer options than using the module directly in code._
+
 ## Coding Standards
 Docstring format: [`Google`][google-docs] <br>
 Styling conventions: [`PEP 8`][pep8] and [`isort`][isort]
