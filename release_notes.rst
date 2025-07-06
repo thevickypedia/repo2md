@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v0.1.0 (07/05/2025)
+-------------------
+- f3d2f2e: Include CLI functionality as entrypoint
+- **Full Changelog**: https://github.com/thevickypedia/repo2md/compare/v0.0.2...v0.1.0
+
 v0.0.2 (07/05/2025)
 -------------------
 - a40b564: Bug fix on missing dependencies for pypi packaging
