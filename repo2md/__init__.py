@@ -11,7 +11,7 @@ from repo2md.utils import (  # noqa: F401
     LANGUAGE_EXTENSIONS,
 )
 
-version = "0.1.0"
+version = "0.1.1"
 
 LOGGER = logging.getLogger("repo2md")
 handler = logging.StreamHandler()

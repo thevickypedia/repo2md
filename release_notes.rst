@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v0.1.1 (07/06/2025)
+-------------------
+- f1235cb: Enhance CLI functionality
+- **Full Changelog**: https://github.com/thevickypedia/repo2md/compare/v0.1.0...v0.1.1
+
 v0.1.0 (07/05/2025)
 -------------------
 - f3d2f2e: Include CLI functionality as entrypoint
