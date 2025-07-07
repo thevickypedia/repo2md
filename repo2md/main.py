@@ -98,10 +98,13 @@ def get_files(
             yield dir_path, list(get_current(dir_path, ignore_files, language))
 
 
-def get_code(iterator: Generator[Tuple[str, List[Dict[str, str]]]]) -> str:
+def get_code(
+    base_path: str, iterator: Generator[Tuple[str, List[Dict[str, str]]]]
+) -> str:
     """Generates a formatted string of code contents from the iterator.
 
     Args:
+        base_path: Base path to strip from file paths in the output.
         iterator: Iterator yielding directory paths and lists of file contents.
 
     Returns:
@@ -109,11 +112,12 @@ def get_code(iterator: Generator[Tuple[str, List[Dict[str, str]]]]) -> str:
         A formatted string containing the code contents, either in Markdown format or plain text.
     """
     text = ""
-    sep = os.path.sep
     for __dir, content_list in iterator:
         for file_content_map in content_list:
             for filepath, content in file_content_map.items():
-                text += f"###### {sep.join(filepath.split(sep)[1:])}\n\n"
+                text += (
+                    f"###### {filepath.replace(base_path, '').lstrip(os.path.sep)}\n\n"
+                )
                 text += f"```\n{content.strip()}\n```"
                 text += "\n\n"
     return text
@@ -135,7 +139,7 @@ def generate_markdown(
     if not filename:
         filename = f"{path.name}.md"
     iterator = get_files(str(path), language=language)
-    text = get_code(iterator)
+    text = get_code(str(path.parent), iterator)
     LOGGER.info("Generating tree for %s", path)
     structure = tree.Tree(path).get()
     LOGGER.info("Storing output in %s", filename)
