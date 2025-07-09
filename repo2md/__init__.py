@@ -1,3 +1,4 @@
+import enum
 import logging
 import sys
 
@@ -25,19 +26,42 @@ LOGGER.setLevel(level=logging.INFO)
 LOGGER.addHandler(hdlr=handler)
 
 
-def print_help() -> None:
+class Command(enum.Enum):
+    """Enum to represent the available commands for the commandline interface."""
+
+    GITHUB = "github"
+    LOCAL = "local"
+
+
+def print_help(command: Command = None, bold: bool = False) -> None:
     """Prints the help section for the commandline interface."""
     options = {
         "--version | -V": "Prints the version.",
         "--help | -H": "Prints the help section.",
-        "--repo | -R": "Name of the GitHub repository to convert.",
-        "--owner | -O": "Name of the GitHub repository's owner/organization.",
-        "--branch | -B": "Branch of the repository to use (default is None, which uses the default branch).",
-        "--destination | -D": "Destination directory to store the Markdown file (default is 'tmp').",
-        "--clean | -C": "Boolean flag to delete the repository after conversion (default is 'True').",
-        "--language | -L": "Boolean flag to filter files by language (default is False).",
-        "--source | -S": "Source path to a repo if a directory has been downloaded already.",
     }
+    arbitrary = f"\nCommand: {command.value}" if command else ""
+    if command == Command.GITHUB:
+        options = {
+            "--repo | -R": "Name of the GitHub repository to convert.",
+            "--owner | -O": "Name of the GitHub repository's owner/organization.",
+            "--branch | -B": "Branch of the repository to use (default is None, which uses the default branch).",
+            "--clean | -C": "Boolean flag to delete the repository after conversion (default is 'True').",
+            "--language | -L": "Boolean flag to filter files by language (default is False).",
+            "--destination | -D": "Destination directory to store the Markdown file (default is 'tmp').",
+        }
+    elif command == Command.LOCAL:
+        options = {
+            "--source | -S": "Source path to the local repo.",
+            "--destination | -D": "Destination directory to store the Markdown file (default is 'tmp').",
+            "--language | -L": "Programming language of the code files in source path (default is None).",
+        }
+    else:
+        arbitrary = (
+            "\nUsage: repo2md [arbitrary-command]"
+            "\n\nCommands:"
+            "\n\t* github: Initiates the conversion process."
+            "\n\t* local: Uses a local directory as the source for conversion."
+        )
     # unique way to increase spacing to keep all values monotonic
     _longest_key = len(max(options.keys()))
     _pretext = "\n\t* "
@@ -45,30 +69,34 @@ def print_help() -> None:
         f"{k} {'·' * (_longest_key - len(k) + 8)}→ {v}".expandtabs()
         for k, v in options.items()
     )
-    click.echo(
-        f"\nUsage: repo2md [arbitrary-command]\nCommands:"
-        "\n\t* github: Initiates the conversion process."
-        "\n\t* local: Uses a local directory as the source for conversion."
-        f"\n\nOptions (and corresponding behavior):{choices}"
-    )
+    click.secho(f"{arbitrary}" f"\n\nOptions:{choices}\n", bold=bold, err=True)
 
 
-def rename_io_map(**kwargs) -> dict:
+def rename_io_map(command: Command, **kwargs) -> dict:
     """Renames the keyword arguments to match the expected parameters for the conversion functions.
 
     Args:
+        command: The command being executed (GITHUB or LOCAL).
         **kwargs: Keyword arguments to be renamed.
 
     Returns:
         dict:
         A dictionary with the renamed keyword arguments.
     """
-    kwargs_map = {
-        "repo": "repo_name",
-        "language": "language_filter",
-        "source": "source_repo_path",
-        "clean": "delete",
-    }
+    if command == Command.GITHUB:
+        kwargs_map = {
+            "repo": "repo_name",
+            "language": "language_filter",
+            "clean": "delete",
+        }
+    elif command == Command.LOCAL:
+        kwargs_map = {
+            "source": "source_repo_path",
+            "language": "source_repo_language",
+        }
+    else:
+        # This should never happen, but just in case
+        raise RuntimeError(f"Unknown command: {command}")
     final_kwargs = {}
     for key, value in kwargs.items():
         if kwargs_map.get(key):
@@ -115,46 +143,36 @@ def rename_io_map(**kwargs) -> dict:
     "-S",
     help="Source path to a repo if a directory has been downloaded already.",
 )
-def commandline(*args, **kwargs) -> None:
+def commandline(*_, **kwargs) -> None:
     # noinspection GrazieInspection
     """Starter function to construct a markdown file from a GitHub repository.
 
-    **Commands**
-        - ``github``: Initiates the conversion process.
-        - ``local``: Uses a local directory as the source for conversion.
-
-    **Flags**
-        - ``--version | -V``: Prints the version.
-        - ``--help | -H``: Prints the help section.
-        - ``--repo | -R``: Name of the GitHub repository to convert.
-        - ``--owner | -O``: Name of the GitHub repository's owner/organization.
-        - ``--branch | -B``: Branch of the repository to use (default is None, which uses the default branch).
-        - ``--destination | -D``: Destination directory to store the Markdown file (default is "tmp").
-        - ``--clean | -C``: Boolean flag to delete the repository after conversion (default is True).
-        - ``--language | -L``: Boolean flag to filter files by language (default is False).
-        - ``--source | -S``: Source path to a repo if a directory has been downloaded already.
+    Notes:
+        Flags can have different meanings based on the command used.
     """
     assert sys.argv[0].lower().endswith("repo2md"), "Invalid commandline trigger!!"
 
     if kwargs.get("version"):
-        click.echo(f"repo2md {version}")
+        click.secho(f"repo2md {version}", bold=True)
         sys.exit(0)
+    try:
+        command = Command[kwargs.get(Command.GITHUB.value, Command.LOCAL.value).upper()]
+    except AttributeError:
+        print_help(bold=True)
+        sys.exit(1)
+
     if kwargs.get("help"):
-        print_help()
+        print_help(command, bold=True)
         sys.exit(0)
 
-    github = kwargs.get("github") and kwargs.get("github") == "github"
-    local = (kwargs.get("github") and kwargs.get("github") == "local") or (
-        kwargs.get("local") and kwargs.get("local") == "local"
-    )
-    if github:
+    if command == Command.GITHUB:
         assert kwargs.get("repo"), "\n\t--repo flag is mandatory for GitHub repository!"
-        convert_repo_to_md(**rename_io_map(**kwargs))
-    elif local:
+        convert_repo_to_md(**rename_io_map(command, **kwargs))
+    elif command == Command.LOCAL:
         assert kwargs.get(
             "source"
         ), "\n\t--source flag is mandatory for local repository!"
-        convert_repo_to_md(**rename_io_map(**kwargs))
+        convert_repo_to_md(**rename_io_map(command, **kwargs))
     else:
         print_help()
         sys.exit(1)

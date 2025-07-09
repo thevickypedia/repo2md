@@ -9,3 +9,5 @@ logs
 *.log
 tmp/
 venv/
+build/
+repo2md.egg-info/
