@@ -60,8 +60,8 @@ def get_current(
 
 def get_files(
     src: str,
-    ignore_directories: List[str] = utils.IGNORE_DIRECTORIES,
-    ignore_files: List[str] = utils.IGNORE_FILES,
+    ignore_directories: List[str] = None,
+    ignore_files: List[str] = None,
     language: str = None,
 ) -> Generator[Tuple[str, List[Dict[str, str]]]]:
     """Walks through the source directory and yields directories with their file contents.
@@ -76,11 +76,15 @@ def get_files(
         Tuple[str, List[Dict[str, str]]]:
         A generator yielding tuples of directory paths and lists of dictionaries containing file contents.
     """
+    ignore_files = ignore_files or utils.IGNORE_FILES
+    ignore_files = [f.lower() for f in ignore_files]
+    ignore_directories = ignore_directories or utils.IGNORE_DIRECTORIES
+    ignore_directories = [d.lower() for d in ignore_directories]
     LOGGER.info("Walking directory %s", src)
     for __path, directories, files in os.walk(src):
         if any(
             (
-                ignore in __path.lower().split(os.path.sep)
+                ignore.lower() in __path.lower().split(os.path.sep)
                 for ignore in ignore_directories
             )
         ):

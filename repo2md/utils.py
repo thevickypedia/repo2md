@@ -32,32 +32,33 @@ LANGUAGE_EXTENSIONS = {
     "julia": [".jl"],
 }
 
+# Specific files in the repository to ignore
 IGNORE_FILES = [
     ".gitignore",
-    "readme.md",
-    "license",
+    "README.md",
+    "LICENSE",
     "requirements.txt",
     "setup.py",
     "pyproject.toml",
-    "pipfile",
-    "pipfile.lock",
+    "Pipfile",
+    "Pipfile.lock",
     "pnpm-lock.yaml",
     "pnpm-lock.yml",
     "package-lock.json",
     "yarn.lock",
     ".dockerignore",
     ".pre-commit-config.yaml",
-    "makefile",
+    "Makefile",
     "settings.gradle",
     "build.gradle",
     "pom.xml",
     "build.sbt",
-    "cargo.toml",
-    "cargo.lock",
+    "Cargo.toml",
+    "Cargo.lock",
     "gradlew",
     "gradlew.bat",
     ".gitattributes",
-    "changelog.md",
+    "CHANGELOG.md",
     ".java-version",
     "openapi.yml",
     "openapi.yaml",
@@ -67,6 +68,7 @@ IGNORE_FILES = [
     "swagger.json",
 ]
 
+# Specific directories in the repository to ignore
 IGNORE_DIRECTORIES = [
     "__pycache__",
     ".git",
@@ -83,8 +85,6 @@ IGNORE_DIRECTORIES = [
     "tests",
     "gradle",
 ]
-
-IGNORE_LIST = IGNORE_DIRECTORIES + IGNORE_FILES
 
 
 def urljoin(*args) -> str:

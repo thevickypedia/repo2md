@@ -11,7 +11,7 @@ class Tree:
 
     """
 
-    def __init__(self, path: pathlib.Path, ignore: Sequence[str] = utils.IGNORE_LIST):
+    def __init__(self, path: pathlib.Path, ignore: Sequence[str] = None):
         """Initialize the Tree with a path and optional ignore list.
 
         Args:
@@ -20,7 +20,7 @@ class Tree:
         """
         self.__tree = []
         self.path = pathlib.Path(path)
-        self.ignore = ignore
+        self.ignore = ignore or utils.IGNORE_FILES + utils.IGNORE_DIRECTORIES
 
     def get(self) -> str:
         """Generate the tree structure starting from the specified path."""
