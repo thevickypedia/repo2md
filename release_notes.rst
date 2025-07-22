@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v0.2.0 (07/22/2025)
+-------------------
+- 43a1fea: feat: Make ignore files and directories case insensitive
+- **Full Changelog**: https://github.com/thevickypedia/repo2md/compare/v0.1.1...v0.2.0
+
 v0.1.1 (07/06/2025)
 -------------------
 - f1235cb: Enhance CLI functionality
