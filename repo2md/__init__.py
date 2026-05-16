@@ -11,7 +11,7 @@ from repo2md.utils import (  # noqa: F401
     LANGUAGE_EXTENSIONS,
 )
 
-version = "0.2.0"
+version = "0.2.1"
 
 LOGGER = logging.getLogger("repo2md")
 handler = logging.StreamHandler()
@@ -116,6 +116,7 @@ def rename_io_map(command: Command, **kwargs) -> dict:
     "--branch",
     "-B",
     help="Branch of the repository to use (default is None, which uses the default branch).",
+    type=str
 )
 @click.option(
     "--destination",
@@ -133,9 +134,8 @@ def rename_io_map(command: Command, **kwargs) -> dict:
 @click.option(
     "--language",
     "-L",
-    help="Boolean flag to filter files by language (default is False).",
-    is_flag=True,
-    default=False,
+    help="GitHub: Boolean flag to filter files by language, Local: Language of the code files in source path",
+    type=str,
 )
 @click.option(
     "--source",
@@ -166,6 +166,7 @@ def commandline(*_, **kwargs) -> None:
 
     if command == Command.GITHUB:
         assert kwargs.get("repo"), "\n\t--repo flag is mandatory for GitHub repository!"
+        kwargs["language"] = bool(kwargs.get("language"))
         convert_repo_to_md(**rename_io_map(command, **kwargs))
     elif command == Command.LOCAL:
         assert kwargs.get(

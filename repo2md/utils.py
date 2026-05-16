@@ -35,6 +35,7 @@ LANGUAGE_EXTENSIONS = {
 # Specific files in the repository to ignore
 IGNORE_FILES = [
     ".gitignore",
+    ".env",
     "README.md",
     "LICENSE",
     "requirements.txt",
@@ -73,16 +74,18 @@ IGNORE_DIRECTORIES = [
     "__pycache__",
     ".git",
     ".idea",
-    "venv",
     ".github",
-    "node_modules",
     ".ds_store",
     ".vscode",
-    ".pytest_cache",
-    "build",
-    "dist",
     "docs",
     "tests",
+    "venv",
+    ".venv",
+    ".pytest_cache",
+    "node_modules",
+    "dist",
+    "build",
+    "target",
     "gradle",
 ]
 

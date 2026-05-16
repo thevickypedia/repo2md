@@ -190,6 +190,7 @@ def convert_repo_to_md(
             assert utils.LANGUAGE_EXTENSIONS.get(
                 source_repo_language.lower()
             ), f"'source_repo_language' {source_repo_language!r} is not supported for conversion"
+            language_filter = True
         else:
             assert (
                 language_filter is False
